@@ -7,12 +7,29 @@ class MetaDescription:
 
         @staticmethod
         def compute_graph_descriptors(G: nx.Graph) -> dict:
-            return {
+            is_connected = nx.is_connected(G.to_undirected()) if not G.is_directed() else nx.is_weakly_connected(G)
+
+            descriptors = {
                 'num_nodes': G.number_of_nodes(),
                 'num_edges': G.number_of_edges(),
                 'num_label_differents': len(set(nx.get_node_attributes(G, 'label').values())),
-                'max_distance': max((max(distance.values()) for node in G.nodes() for distance in [nx.single_source_shortest_path_length(G, node)]), default=0)
+                'num_edge_labels': len(set(nx.get_edge_attributes(G, 'label').values())) if nx.get_edge_attributes(G, 'label') else 0,
+                'max_distance': max(
+                    (max(distance.values())
+                    for node in G.nodes()
+                    for distance in [nx.single_source_shortest_path_length(G, node)]),
+                    default=0
+                ),
+                'density': nx.density(G),
+                'num_connected_components': (
+                    nx.number_connected_components(G.to_undirected())
+                    if not G.is_directed()
+                    else nx.number_weakly_connected_components(G)
+                ),
+                'diameter_if_connected': nx.diameter(G.to_undirected()) if is_connected else 0
             }
+
+            return descriptors
 
         @staticmethod
         def compute_graph_descriptor_all(graphs: list[tuple[nx.Graph, int]]) -> pd.DataFrame:
